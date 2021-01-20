@@ -5,7 +5,7 @@ const router = express.Router();
 const usersController = require('../controllers/usersController');
 const userValidator = require('../validators/userValidator');
 
-router.get('/', usersController.getAllUsers, usersController.indexView);
+router.get('/', usersController.isAuthenticated, usersController.getAllUsers, usersController.indexView);
 router.get('/new', usersController.new);
 router.post(
   '/create',
@@ -15,6 +15,6 @@ router.post(
   usersController.authenticate,
   usersController.redirectView
 );
-router.get('/', usersController.show, usersController.showView);
+router.get('/:id', usersController.isAuthenticated, usersController.show, usersController.showView);
 
 module.exports = router;

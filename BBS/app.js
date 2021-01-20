@@ -3,6 +3,7 @@
 const express = require('express');
 const app = express();
 const passport = require('./auth/auth');
+const config = require('./config/config');
 const cookieParser = require('cookie-parser');
 const layouts = require('express-ejs-layouts');
 const expressSession = require('express-session');
@@ -12,10 +13,10 @@ const logger = require('morgan');
 
 const router = require('./routes/index');
 
-
 // view engine setup
 app.set('port', process.env.PORT || 3000);
 app.set('view engine', 'ejs');
+app.set('superSecret', config.secret);
 
 app.use(logger('dev'));
 app.use(express.json());

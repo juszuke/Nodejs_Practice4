@@ -2,50 +2,47 @@
 
 const User = require('../models').User;
 const passport = require('passport');
+const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const { validationResult } = require('express-validator');
-const getUserParams = (body) => {
-  return {
-    name: body.name,
-    email: body.email,
-    password: bcrypt.hashSync(body.password, bcrypt.genSaltSync(8)),
-  };
-};
 
 module.exports = {
   getAllUsers: (req, res, next) => {
     User.findAll()
-      .then((users) => {
-        res.locals.users = users;
-        next();
-      })
-      .catch((error) => {
-        console.log(`Error fetching users: ${error.message}`);
-        next(error);
-      });
+    .then((users) => {
+      res.locals.users = users;
+      next();
+    })
+    .catch((error) => {
+      console.log(`Error fetching users: ${error.message}`);
+      next(error);
+    });
   },
-
+  
   indexView: (req, res) => {
     res.render('users/index');
   },
-
+  
   new: (req, res) => {
     res.render('users/new');
   },
 
   create: (req, res, next) => {
     if (req.skip) return next();
-    const newUser = new User(getUserParams(req.body)).dataValues;
-    User.create(newUser)
-      .then((e, user) => {
-        if (user) {
-          req.flash(
-            'success',
-            `${user.name}'s account created successfully!`
-            );
-            res.locals.redirect = '/users';
-            next();
-          } else {
+    User.create({
+      name: req.body.name,
+      email: req.body.email,
+      password: bcrypt.hashSync(req.body.password, bcrypt.genSaltSync(8)),
+    })
+    .then((e, user) => {
+      if (user) {
+        req.flash(
+          'success',
+          `${user.name}'s account created successfully!`
+          );
+          res.locals.redirect = '/users';
+          next();
+        } else {
           req.flash(
             'error',
             `Failed to create user account because: ${e.message}`
@@ -80,6 +77,9 @@ module.exports = {
   },
 
   login: (req, res) => {
+    const user = req.user;
+    const token = jwt.sign(user, 'superSecret', {expiresIn: '1h'});
+    req.session.token = token;
     res.render('auth/login');
   },
 
@@ -96,23 +96,25 @@ module.exports = {
     }
   },
 
-  // authenticate: passport.authenticate('local', {
-  //   failureRedirect: '/auth/login',
-  //   failureFlash: 'Failed to login.',
-  //   successRedirect: '/users',
-  //   successFlash: 'Logged in!',
-  // }),
-
-  authenticate: passport.authenticate('jwt', {
+  authenticate: passport.authenticate('login', {
     failureRedirect: '/auth/login',
     failureFlash: 'Failed to login.',
     successRedirect: '/users',
     successFlash: 'Logged in!',
-    session: false
   }),
+
+  isAuthenticated: (req, res, next) => {
+    if (req.isAuthenticated()) {
+        return next();
+    }
+    else {
+        res.redirect('/auth/login');
+    }
+  },
 
   logout: (req, res, next) => {
     req.logout();
+    req.session.token = "";
     req.flash('success', 'You have been logged out!');
     res.locals.redirect = '/auth/login';
     next();
