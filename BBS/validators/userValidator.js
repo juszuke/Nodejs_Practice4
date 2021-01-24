@@ -1,4 +1,4 @@
-const { body } = require('express-validator');
+const { body, validationResult } = require('express-validator');
 
 module.exports = [
   body('name').not().isEmpty().withMessage('NAME は必ず入力して下さい'),
@@ -18,4 +18,16 @@ module.exports = [
     }
     return true;
   }),
+  (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      const messages = errors.array().map(e => e.msg);
+      req.skip = true;
+      req.flash('error', messages.join(' and '));
+      res.locals.redirect = '/users/new';
+      next();
+    } else {
+      next();
+    }
+  },
 ];
