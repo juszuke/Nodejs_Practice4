@@ -1,7 +1,5 @@
 'use strict';
 
-const express = require('express');
-const app = express();
 const bcrypt = require('bcrypt');
 const passport = require('passport');
 const LocalStrategy = require('passport-local').Strategy;
@@ -27,6 +25,7 @@ passport.use(
           }
           throw new Error();
         })
+        // eslint-disable-next-line no-unused-vars
         .catch(error => {
           // エラー処理
           return done(null, false, {

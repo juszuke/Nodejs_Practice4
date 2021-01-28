@@ -1,6 +1,7 @@
 'use strict';
 
 const express = require('express');
+const passport = require('../auth/auth');
 const router = express.Router();
 const usersController = require('../controllers/usersController');
 const userValidator = require('../validators/userValidator');
@@ -16,7 +17,12 @@ router.post(
   '/create',
   userValidator,
   usersController.create,
-  usersController.authenticate,
+  passport.authenticate('login', {
+    failureRedirect: '/auth/login',
+    failureFlash: 'Failed to login.',
+    successRedirect: '/users',
+    successFlash: 'Logged in!',
+  }),
   usersController.redirectView
 );
 router.get(

@@ -1,7 +1,6 @@
 'use strict';
 
 const User = require('../models').User;
-const passport = require('passport');
 // const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 
@@ -77,14 +76,6 @@ module.exports = {
     // req.session.token = token;
     res.render('auth/login');
   },
-
-
-  authenticate: passport.authenticate('login', {
-    failureRedirect: '/auth/login',
-    failureFlash: 'Failed to login.',
-    successRedirect: '/users',
-    successFlash: 'Logged in!',
-  }),
 
   isAuthenticated: (req, res, next) => {
     if (req.isAuthenticated()) {
