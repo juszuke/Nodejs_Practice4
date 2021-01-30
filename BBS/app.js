@@ -1,49 +1,51 @@
-const createError = require('http-errors');
+'use strict';
+
 const express = require('express');
-const path = require('path');
-const cookieParser = require('cookie-parser');
-const logger = require('morgan');
-const mysql = require('mysql');
-
-const indexRouter = require('./routes/index');
-const usersRouter = require('./routes/users');
-
 const app = express();
+const passport = require('./auth/auth');
+const config = require('./config/config');
+const cookieParser = require('cookie-parser');
+const layouts = require('express-ejs-layouts');
+const expressSession = require('express-session');
+const bodyParser = require('body-parser');
+const connectFlash = require('connect-flash');
+const logger = require('morgan');
 
-mysql.createConnection({
-  host: 'localhost',
-  user: 'root',
-  password: 'LDZS1505',
-  database: 'BBS'
-});
+const router = require('./routes/index');
 
 // view engine setup
-app.set('views', path.join(__dirname, 'views'));
+app.set('port', process.env.PORT || 3000);
 app.set('view engine', 'ejs');
+app.set('superSecret', config.secret);
 
 app.use(logger('dev'));
 app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
+app.use(bodyParser.urlencoded({ extended: true }));
 app.use(cookieParser());
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(
+  expressSession({
+    secret: 'secretLogIn123',
+    cookie: {
+      maxAge: 4000000,
+    },
+    resave: false,
+    saveUninitialized: false,
+  })
+);
+app.use(connectFlash());
+app.use(express.static('public'));
+app.use(layouts);
 
-app.use('/', indexRouter);
-app.use('/users', usersRouter);
+app.use(passport.initialize());
+app.use(passport.session());
 
-// catch 404 and forward to error handler
-app.use(function(req, res, next) {
-  next(createError(404));
+app.use((req, res, next) => {
+  res.locals.loggedIn = req.isAuthenticated();
+  res.locals.currentUser = req.user;
+  res.locals.flashMessages = req.flash();
+  next();
 });
 
-// error handler
-app.use(function(err, req, res) {
-  // set locals, only providing error in development
-  res.locals.message = err.message;
-  res.locals.error = req.app.get('env') === 'development' ? err : {};
-
-  // render the error page
-  res.status(err.status || 500);
-  res.render('error');
-});
+app.use('/', router);
 
 module.exports = app;
